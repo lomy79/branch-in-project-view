@@ -7,8 +7,21 @@
     <description><![CDATA[
         Shows the current git branch instead of the path (location string)
         next to each module / content root in the <b>Project</b> tool window.<br>
+        <ul>
+            <li>Branch colored by name: green on <code>main</code>/<code>master</code>, orange otherwise.</li>
+            <li>↑ / ↓ arrows for commits to push / pull vs origin.</li>
+            <li>An amber ● marker when the working tree has uncommitted changes.</li>
+            <li>Click the branch text (or use the context menu) to switch branch via the native Git popup.</li>
+        </ul>
         In monorepos each module shows the branch of its own repository.
     ]]></description>
+
+    <change-notes><![CDATA[
+        <b>0.1.0</b>
+        <ul>
+            <li>Initial release.</li>
+        </ul>
+    ]]></change-notes>
 
     <depends>com.intellij.modules.platform</depends>
     <depends>Git4Idea</depends>

@@ -18,3 +18,9 @@ out/
 # OS
 .DS_Store
 Thumbs.db
+
+# Plugin signing material — NEVER commit these
+*.pem
+*.crt
+*.p12
+secrets.properties

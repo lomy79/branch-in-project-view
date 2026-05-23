@@ -26,10 +26,31 @@ dependencies {
 intellijPlatform {
     pluginConfiguration {
         ideaVersion {
-            sinceBuild = "262"
+            // Lowest supported released build (2025.3). Verified by the plugin verifier.
+            sinceBuild = "253"
             // Leave the upper bound open: the plugin stays compatible with future
             // builds without rebuilding on every update.
             untilBuild = provider { null }
+        }
+    }
+
+    // Marketplace signing (optional but recommended). Values come from env vars,
+    // so no secret is stored in the repo. See JetBrains "Plugin Signing".
+    signing {
+        certificateChain = providers.environmentVariable("CERTIFICATE_CHAIN")
+        privateKey = providers.environmentVariable("PRIVATE_KEY")
+        password = providers.environmentVariable("PRIVATE_KEY_PASSWORD")
+    }
+
+    // Marketplace publishing: ./gradlew publishPlugin with PUBLISH_TOKEN set.
+    publishing {
+        token = providers.environmentVariable("PUBLISH_TOKEN")
+    }
+
+    // `./gradlew verifyPlugin` checks API compatibility against released IDEs.
+    pluginVerification {
+        ides {
+            recommended()
         }
     }
 }

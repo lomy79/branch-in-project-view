@@ -4,6 +4,13 @@ IntelliJ IDEA plugin that shows the **current git branch** instead of the path
 (the gray text / *location string*) next to each module / content root in the
 **Project** tool window. In monorepos each module shows the branch of its own repo.
 
+![Branch in Project View](docs/project-view.png)
+
+At a glance, per module: branch name, color (**green** on `main`/`master`, **orange**
+otherwise) and an amber **●** when the working tree has uncommitted changes — here
+`web-app` is on a feature branch with pending changes, `mobile-api` is still on
+`release/2.0`, while `payments-service` is clean on `main`.
+
 ## How it works
 
 - `BranchTreeStructureProvider` — a `TreeStructureProvider` that replaces the

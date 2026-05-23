@@ -1,0 +1,20 @@
+# Gradle
+.gradle/
+build/
+
+# Kotlin compiler local state
+.kotlin/
+
+# IntelliJ Platform Gradle Plugin (runIde sandbox, coroutines agent, caches)
+.intellijPlatform/
+
+# IntelliJ IDEA project files
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# OS
+.DS_Store
+Thumbs.db

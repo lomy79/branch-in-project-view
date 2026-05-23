@@ -1,0 +1,47 @@
+<idea-plugin>
+    <id>io.github.lomy79.branchinprojectview</id>
+    <name>Branch in Project View</name>
+    <version>0.1.0</version>
+    <vendor email="aaresu@gmail.com" url="https://github.com/lomy79/branch-in-project-view">Andrea Aresu</vendor>
+
+    <description><![CDATA[
+        Shows the current git branch instead of the path (location string)
+        next to each module / content root in the <b>Project</b> tool window.<br>
+        In monorepos each module shows the branch of its own repository.
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>Git4Idea</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <treeStructureProvider
+            implementation="io.github.lomy79.branchinprojectview.BranchTreeStructureProvider"/>
+        <postStartupActivity
+            implementation="io.github.lomy79.branchinprojectview.BranchClickActivity"/>
+    </extensions>
+
+    <projectListeners>
+        <!-- Repo state change (e.g. checking out another branch). -->
+        <listener class="io.github.lomy79.branchinprojectview.BranchChangeRefreshListener"
+                  topic="git4idea.repo.GitRepositoryChangeListener"/>
+        <!-- Git repos discovery/update (async registration at startup). -->
+        <listener class="io.github.lomy79.branchinprojectview.BranchChangeRefreshListener"
+                  topic="com.intellij.dvcs.repo.VcsRepositoryMappingListener"/>
+        <!-- Incoming/outgoing info vs origin updates (the arrows). -->
+        <listener class="io.github.lomy79.branchinprojectview.BranchChangeRefreshListener"
+                  topic="git4idea.branch.GitBranchIncomingOutgoingManager$GitIncomingOutgoingListener"/>
+        <!-- Local change list updates (the ● dirty working tree marker). -->
+        <listener class="io.github.lomy79.branchinprojectview.BranchChangeRefreshListener"
+                  topic="com.intellij.openapi.vcs.changes.ChangeListListener"/>
+    </projectListeners>
+
+    <actions>
+        <action id="io.github.lomy79.branchinprojectview.ShowBranches"
+                class="io.github.lomy79.branchinprojectview.ShowBranchesAction"
+                text="Git Branches…"
+                description="Opens the git branches popup for the selected module"
+                icon="AllIcons.Vcs.Branch">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+        </action>
+    </actions>
+</idea-plugin>

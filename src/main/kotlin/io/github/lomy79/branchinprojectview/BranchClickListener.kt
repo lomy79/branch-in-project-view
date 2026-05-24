@@ -16,14 +16,20 @@
 package io.github.lomy79.branchinprojectview
 
 import com.intellij.ide.projectView.ProjectView
+import com.intellij.ide.projectView.ProjectViewNode
+import com.intellij.ide.projectView.impl.AbstractProjectViewPane
+import com.intellij.ide.projectView.impl.ProjectViewListener
 import com.intellij.ide.util.treeView.NodeDescriptor
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.SimpleColoredComponent
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.util.concurrency.AppExecutorUtil
 import com.intellij.util.ui.tree.TreeUtil
+import git4idea.repo.GitRepository
 import git4idea.repo.GitRepositoryManager
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
@@ -32,25 +38,44 @@ import javax.swing.JTree
 import javax.swing.tree.TreePath
 
 /**
- * Attaches [BranchClickListener] to the Project view tree as soon as it is
- * available after the project opens.
+ * Attaches a [BranchClickListener] to the tree of every Project tool window pane
+ * (Project, Scopes, …) so the branch fragment is clickable wherever it is shown.
+ *
+ * The currently visible pane is hooked as soon as it is available after the project
+ * opens; every pane shown later is hooked via [ProjectViewListener.paneShown].
  */
 class BranchClickActivity : ProjectActivity {
-    override suspend fun execute(project: Project) = attachWhenReady(project, attempt = 0)
+    override suspend fun execute(project: Project) {
+        // The pane that is already visible at startup.
+        attachWhenReady(project, attempt = 0)
+
+        // Any pane shown later (e.g. switching to the Scopes view) gets its tree hooked too.
+        project.messageBus.connect().subscribe(
+            ProjectViewListener.TOPIC,
+            object : ProjectViewListener {
+                override fun paneShown(current: AbstractProjectViewPane, previous: AbstractProjectViewPane?) {
+                    attach(project, current.tree)
+                }
+            },
+        )
+    }
 
     private fun attachWhenReady(project: Project, attempt: Int) {
         ApplicationManager.getApplication().invokeLater {
             if (project.isDisposed) return@invokeLater
             val tree = ProjectView.getInstance(project).currentProjectViewPane?.tree
             when {
-                tree != null && tree.getClientProperty(ATTACHED) != true -> {
-                    tree.putClientProperty(ATTACHED, true)
-                    tree.addMouseListener(BranchClickListener(project, tree))
-                }
-                tree == null && attempt < 40 -> AppExecutorUtil.getAppScheduledExecutorService()
+                tree != null -> attach(project, tree)
+                attempt < 40 -> AppExecutorUtil.getAppScheduledExecutorService()
                     .schedule({ attachWhenReady(project, attempt + 1) }, 500, TimeUnit.MILLISECONDS)
             }
         }
+    }
+
+    private fun attach(project: Project, tree: JTree?) {
+        if (tree == null || tree.getClientProperty(ATTACHED) == true) return
+        tree.putClientProperty(ATTACHED, true)
+        tree.addMouseListener(BranchClickListener(project, tree))
     }
 
     private companion object {
@@ -70,9 +95,13 @@ private class BranchClickListener(private val project: Project, private val tree
         val row = tree.getRowForLocation(e.x, e.y)
         if (row < 0) return
         val path = tree.getPathForRow(row) ?: return
-        val node = branchNodeAt(path) ?: return
-        val vf = node.virtualFile ?: return
-        val repo = GitRepositoryManager.getInstance(project).getRepositoryForFileQuick(vf) ?: return
+
+        // Resolving a node's virtual file may touch the workspace model (e.g. the Scopes
+        // view), which requires a read action even on the EDT.
+        val repo = ReadAction.compute<GitRepository?, RuntimeException> {
+            val vf = contentRootAt(path) ?: return@compute null
+            GitRepositoryManager.getInstance(project).getRepositoryForFileQuick(vf)
+        } ?: return
 
         if (!clickedOnBranchFragment(e, path, row)) return
 
@@ -106,9 +135,17 @@ private class BranchClickListener(private val project: Project, private val tree
         return null
     }
 
-    private fun branchNodeAt(path: TreePath): BranchDirectoryNode? {
+    /**
+     * The content root represented by [path], or null if the node is not a content root.
+     * Works for any pane: the Project view ([BranchDirectoryNode]) and the Scopes view
+     * (private [ProjectViewNode] subtypes) alike.
+     */
+    private fun contentRootAt(path: TreePath): VirtualFile? {
         val uo = TreeUtil.getLastUserObject(path) ?: return null
-        return uo as? BranchDirectoryNode
-            ?: ((uo as? NodeDescriptor<*>)?.element as? BranchDirectoryNode)
+        val node = uo as? ProjectViewNode<*>
+            ?: (uo as? NodeDescriptor<*>)?.element as? ProjectViewNode<*>
+            ?: return null
+        val vf = node.virtualFile ?: return null
+        return if (BranchPresentation.isContentRoot(project, vf)) vf else null
     }
 }

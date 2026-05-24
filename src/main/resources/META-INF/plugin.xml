@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>io.github.lomy79.branchinprojectview</id>
     <name>Branch in Project View</name>
-    <version>0.1.0</version>
+    <version>0.2.0</version>
     <vendor email="aaresu@gmail.com" url="https://github.com/lomy79/branch-in-project-view">Andrea Aresu</vendor>
 
     <description><![CDATA[
@@ -17,6 +17,12 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <b>0.2.0</b>
+        <ul>
+            <li>The branch label now also appears in the <b>Scopes</b> view (and other panes),
+                not only in the <b>Project</b> view.</li>
+            <li>Clicking the branch label opens the checkout popup in those panes too.</li>
+        </ul>
         <b>0.1.0</b>
         <ul>
             <li>Initial release.</li>
@@ -29,6 +35,8 @@
     <extensions defaultExtensionNs="com.intellij">
         <treeStructureProvider
             implementation="io.github.lomy79.branchinprojectview.BranchTreeStructureProvider"/>
+        <projectViewNodeDecorator
+            implementation="io.github.lomy79.branchinprojectview.BranchNodeDecorator"/>
         <postStartupActivity
             implementation="io.github.lomy79.branchinprojectview.BranchClickActivity"/>
     </extensions>

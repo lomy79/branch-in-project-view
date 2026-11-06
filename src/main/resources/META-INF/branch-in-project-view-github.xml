@@ -1,0 +1,18 @@
+<!-- Loaded only when the bundled GitHub plugin is enabled. -->
+<idea-plugin>
+    <extensions defaultExtensionNs="com.intellij">
+        <postStartupActivity
+            implementation="io.github.lomy79.branchinprojectview.PullRequestRepositoriesPreloadActivity"/>
+        <notificationGroup id="Branch in Project View" displayType="BALLOON"/>
+    </extensions>
+
+    <actions>
+        <!-- Replaces GitHub's own action, in its place in the branch popup: that one only knows the connected repository. -->
+        <action id="Github.Pull.Request.Show.In.Toolwindow"
+                overrides="true"
+                class="io.github.lomy79.branchinprojectview.ShowPullRequestInRepositoryAction"
+                text="Show Pull Request in the Tool Window"
+                description="Switches the Pull Requests tool window to this repository and shows the pull request of its current branch"
+                icon="AllIcons.Vcs.Vendors.Github"/>
+    </actions>
+</idea-plugin>

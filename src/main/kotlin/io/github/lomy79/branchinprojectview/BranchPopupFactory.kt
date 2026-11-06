@@ -19,6 +19,8 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.ui.popup.JBPopupFactory
+import com.intellij.openapi.ui.popup.JBPopupListener
+import com.intellij.openapi.ui.popup.LightweightWindowEvent
 import git4idea.branch.GitBrancher
 import git4idea.repo.GitRepository
 
@@ -35,8 +37,29 @@ object BranchPopupFactory {
 
     private val LOG = Logger.getInstance(BranchPopupFactory::class.java)
 
-    fun create(project: Project, repository: GitRepository): JBPopup? =
-        nativePopup(project, repository) ?: fallbackChooser(project, repository)
+    /**
+     * The repository of the popup opened from a branch label, while it is open. Lets the
+     * popup's actions know it: the native popup does not always expose it in its data context.
+     */
+    @Volatile
+    var openedRepository: GitRepository? = null
+        private set
+
+    fun create(project: Project, repository: GitRepository): JBPopup? {
+        // Before building the popup: building it already updates its actions.
+        openedRepository = repository
+        val popup = nativePopup(project, repository) ?: fallbackChooser(project, repository)
+        if (popup == null) {
+            openedRepository = null
+            return null
+        }
+        popup.addListener(object : JBPopupListener {
+            override fun onClosed(event: LightweightWindowEvent) {
+                if (openedRepository === repository) openedRepository = null
+            }
+        })
+        return popup
+    }
 
     /** Native Git popup for the given repo (git4idea.ui.branch.popup.GitBranchesTreePopupOnBackend). */
     private fun nativePopup(project: Project, repository: GitRepository): JBPopup? = try {

@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "io.github.lomy79"
-version = "0.2.0"
+version = "0.4.4"
 
 repositories {
     mavenCentral()
@@ -16,10 +16,13 @@ repositories {
 dependencies {
     intellijPlatform {
         // Use the locally installed IDE: no need to download the whole SDK.
-        local("/home/andrea/work/idea-IU-262.5752.32")
+        // Override the path with -PlocalIdePath=... or in ~/.gradle/gradle.properties.
+        local(providers.gradleProperty("localIdePath").getOrElse("/home/andrea/work/idea-IU-262.5752.32"))
 
         // The Git plugin is bundled in the IDE: we need its API (git4idea).
         bundledPlugin("Git4Idea")
+        // Optional at runtime: switching its Pull Requests tool window between repositories.
+        bundledPlugin("org.jetbrains.plugins.github")
     }
 }
 
